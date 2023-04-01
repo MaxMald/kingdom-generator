@@ -51,9 +51,9 @@ export class HeightMap
     
     let numRows: number = lvalue.Rows;
     let numCols: number = lvalue.Columns;
-    result.Init(numCols, numRows);
-
     let size: number = numRows * numCols;
+    result.Init(numCols, numRows, new Array(size));
+    
     for (let i: number = 0; i < size; ++i)
     {
       result._m_heightMatrix[i] = lvalue._m_heightMatrix[i] + rValue._m_heightMatrix[i];
@@ -73,9 +73,9 @@ export class HeightMap
     
     let numRows: number = lvalue.Rows;
     let numCols: number = lvalue.Columns;
-    result.Init(numCols, numRows);
-
     let size: number = numRows * numCols;
+    result.Init(numCols, numRows, new Array(size));
+    
     for (let i: number = 0; i < size; ++i)
     {
       result._m_heightMatrix[i] = lvalue._m_heightMatrix[i] - rValue._m_heightMatrix[i];
@@ -96,13 +96,12 @@ export class HeightMap
       throw new Error("HeightMap instances must have the same dimensions to perform this operation.");  
     }
 
-    let result: HeightMap = new HeightMap();
-    
+    let result: HeightMap = new HeightMap();    
     let numRows: number = lvalue.Rows;
     let numCols: number = lvalue.Columns;
-    result.Init(numCols, numRows);
-
     let size: number = numRows * numCols;
+    result.Init(numCols, numRows, new Array(size));
+    
     for (let i: number = 0; i < size; ++i)
     {
       let value: number = lvalue._m_heightMatrix[i] + rValue._m_heightMatrix[i];
@@ -117,8 +116,9 @@ export class HeightMap
    * 
    * @param columns Number of columns.
    * @param rows Number of rows.
+   * @param values Array of values.
    */
-  public Init(columns: number, rows: number): void
+  public Init(columns: number, rows: number, values: number[]): void
   {
     if (columns <= 0)
     {
@@ -132,13 +132,7 @@ export class HeightMap
 
     this._m_columns = columns;
     this._m_rows = rows;
-    
-    let size: number = columns * rows;
-    this._m_heightMatrix = new Array(size);
-    for (let i = 0; i < size; ++i)
-    {
-      this._m_heightMatrix[i] = 0;
-    }
+    this._m_heightMatrix = values;
   }
 
   /**

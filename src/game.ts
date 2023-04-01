@@ -1,7 +1,13 @@
 import 'phaser';
+import { PerlinNoise2D } from './perlinNoise2D';
+import { HeightMap } from './heightMap';
 
 export default class Demo extends Phaser.Scene
 {
+  private _m_heightMap: HeightMap;
+
+  private _m_graphics: Phaser.GameObjects.Graphics;
+
   constructor()
   {
     super('demo');
@@ -17,22 +23,35 @@ export default class Demo extends Phaser.Scene
 
   create()
   {
-    this.add.shader('RGB Shift Field', 0, 0, 800, 600).setOrigin(0);
+    this._m_graphics = this.add.graphics();
+    let perlinNoise: PerlinNoise2D = new PerlinNoise2D();
+    perlinNoise.Init(500, 500);
+    
+    this._m_heightMap = new HeightMap();
+    this._m_heightMap.Init(500, 500, perlinNoise.GeneratePerlinNoise(500, 500, 4, 2));
+    
+    let cellHeight: number = this.renderer.height / 500;
+    let cellWidth: number = cellHeight;
 
-    this.add.shader('Plasma', 0, 412, 800, 172).setOrigin(0);
+    let black = new Phaser.Display.Color(0, 0, 0);
+    let white = new Phaser.Display.Color(255, 255, 255);
+    let rect = new Phaser.Geom.Rectangle(0, 0, cellWidth, cellHeight);
+    for (let x = 0; x < 500; ++x)
+    {
+      for (let y = 0; y < 500; ++y)
+      {
+        rect.setPosition(x * cellWidth, y * cellHeight);
+        
+        let colorObj = Phaser.Display.Color.Interpolate.ColorWithColor(black, white, 1, this._m_heightMap.Get(x, y));
+        let color = new Phaser.Display.Color(colorObj.r, colorObj.g, colorObj.b); 
+        this._m_graphics.fillStyle(
+          color.color
+        );
+        this._m_graphics.fillRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
+      }
+    }
 
-    this.add.image(400, 300, 'libs');
-
-    const logo = this.add.image(400, 70, 'logo');
-
-    this.tweens.add({
-      targets: logo,
-      y: 350,
-      duration: 1500,
-      ease: 'Sine.inOut',
-      yoyo: true,
-      repeat: -1
-    })
+    console.log("ready");
   }
 }
 
