@@ -28,30 +28,80 @@ export default class Demo extends Phaser.Scene
     perlinNoise.Init(500, 500);
     
     this._m_heightMap = new HeightMap();
-    this._m_heightMap.Init(500, 500, perlinNoise.GeneratePerlinNoise(500, 500, 4, 2));
-    
-    let cellHeight: number = this.renderer.height / 500;
-    let cellWidth: number = cellHeight;
+    this._m_heightMap.Init(500, 500, perlinNoise.GeneratePerlinNoise(500, 500, 8, 2));
+    //this.UpdateHeightMapVisualization(this._m_heightMap);
+    this.UpdateHeightMapVisualization(this.CitiesTerrains());
+  }
 
+  private UpdateHeightMapVisualization(heightMap: HeightMap)
+  {
+    this._m_graphics.clear();
+
+    let cellHeight: number = this.renderer.height / heightMap.Rows;
+    let cellWidth: number = cellHeight;
     let black = new Phaser.Display.Color(0, 0, 0);
     let white = new Phaser.Display.Color(255, 255, 255);
     let rect = new Phaser.Geom.Rectangle(0, 0, cellWidth, cellHeight);
-    for (let x = 0; x < 500; ++x)
+    for (let x = 0; x < heightMap.Columns; ++x)
     {
-      for (let y = 0; y < 500; ++y)
+      for (let y = 0; y < heightMap.Rows; ++y)
       {
-        rect.setPosition(x * cellWidth, y * cellHeight);
-        
-        let colorObj = Phaser.Display.Color.Interpolate.ColorWithColor(black, white, 1, this._m_heightMap.Get(x, y));
-        let color = new Phaser.Display.Color(colorObj.r, colorObj.g, colorObj.b); 
+        rect.setPosition(x * cellWidth, y * cellHeight);        
+        let colorObj = Phaser.Display.Color.Interpolate.ColorWithColor(black, white, 1, heightMap.Get(x, y));
         this._m_graphics.fillStyle(
-          color.color
+          new Phaser.Display.Color(colorObj.r, colorObj.g, colorObj.b).color
         );
         this._m_graphics.fillRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
       }
     }
+  }
 
-    console.log("ready");
+  private CitiesTerrains() : HeightMap
+  {
+    let positions: Phaser.Math.Vector2[];
+    positions = [
+      new Phaser.Math.Vector2(50, 50),
+      new Phaser.Math.Vector2(150, 150)
+    ]
+
+    let cityRadious = 30;
+    let innerRadious = 15;
+    let values: number[] = new Array(240 * 240);
+
+    for (let x = 0; x < 240; ++x)
+    {
+      for (let y = 0; y < 240; ++y)
+      {
+        for (let cityPositionIndex = 0; cityPositionIndex < positions.length; ++cityPositionIndex)
+        {
+          let cityDistance: number = Math.sqrt(
+            Math.pow(positions[cityPositionIndex].x - x, 2) + Math.pow(positions[cityPositionIndex].y - y, 2)
+          );
+          if (cityDistance <= cityRadious)
+          {
+            if (cityDistance > innerRadious)
+            {
+              values[x + y * 240] = 1.0 - ((cityDistance - innerRadious) / (cityRadious - innerRadious));  
+            }
+            else
+            {
+              values[x + y * 240] = 1.0;  
+            }
+          }
+          else
+          {
+            if (values[x + y * 240] == null)
+            {
+              values[x + y * 240] = 0.0;  
+            }
+          }
+        }        
+      }
+    }
+
+    let heightMap = new HeightMap();
+    heightMap.Init(240, 240, values);
+    return heightMap;
   }
 }
 
