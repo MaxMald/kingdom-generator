@@ -1,12 +1,26 @@
 import 'phaser';
 import { PerlinNoise2D } from './perlinNoise2D';
 import { HeightMap } from './heightMap';
+import { Agent } from './object';
+import { City } from './city';
 
 export default class Demo extends Phaser.Scene
 {
   private _m_heightMap: HeightMap;
 
   private _m_graphics: Phaser.GameObjects.Graphics;
+
+  private _m_citiesGraphics: Phaser.GameObjects.Graphics;
+
+  private _m_colorRed: Phaser.Display.Color;
+
+  private _m_colorGreen: Phaser.Display.Color;
+
+  private _m_colorBlue: Phaser.Display.Color;
+
+  private _m_scaleX: number;
+  
+  private _m_scaleY: number;
 
   constructor()
   {
@@ -23,14 +37,35 @@ export default class Demo extends Phaser.Scene
 
   create()
   {
+    let width: number = 255;
+    let height: number = 255;
+
+    this._m_scaleY = this.renderer.height / height;
+    this._m_scaleX = this._m_scaleY;
+
+    this._m_colorRed = new Phaser.Display.Color(255, 0, 0);
+    this._m_colorGreen = new Phaser.Display.Color(0, 255, 0);
+    this._m_colorBlue = new Phaser.Display.Color(0, 0, 255);
+
     this._m_graphics = this.add.graphics();
+    this._m_citiesGraphics = this.add.graphics();
     let perlinNoise: PerlinNoise2D = new PerlinNoise2D();
     perlinNoise.Init(500, 500);
     
     this._m_heightMap = new HeightMap();
     this._m_heightMap.Init(500, 500, perlinNoise.GeneratePerlinNoise(500, 500, 8, 2));
-    //this.UpdateHeightMapVisualization(this._m_heightMap);
-    this.UpdateHeightMapVisualization(this.CitiesTerrains());
+    
+    
+
+    let cities: City[] = this.GenerateCitiesDistribution(10, 100, 10, 50, 5, width, height);
+    this.UpdateHeightMapVisualization(this.CitiesTerrains(cities, width, height));
+    for (let i = 0; i < cities.length; ++i)
+    {
+      this.PaintCity(this._m_citiesGraphics, cities[i], this._m_scaleX);  
+    }
+
+    //this.UpdateHeightMapVisualization();
+
   }
 
   private UpdateHeightMapVisualization(heightMap: HeightMap)
@@ -56,52 +91,140 @@ export default class Demo extends Phaser.Scene
     }
   }
 
-  private CitiesTerrains() : HeightMap
+  private GenerateCitiesDistribution(
+    numCities: number,
+    centralCityRadius: number,
+    centralCityInnerRadius: number,
+    citiesRadius: number,
+    citiesInnerRadius: number,
+    width: number,
+    height: number
+  ): City[]
   {
-    let positions: Phaser.Math.Vector2[];
-    positions = [
-      new Phaser.Math.Vector2(50, 50),
-      new Phaser.Math.Vector2(150, 150)
-    ]
+    let cities: City[] = new Array<City>();
+    
+    let centralCity: City = new City();
+    centralCity.Init(
+      new Phaser.Math.Vector2(Math.random() * width, Math.random() * height),
+      centralCityRadius
+    );
+    centralCity.SetInnerRadius(centralCityInnerRadius);
+    cities.push(centralCity);
 
-    let cityRadious = 30;
-    let innerRadious = 15;
-    let values: number[] = new Array(240 * 240);
-
-    for (let x = 0; x < 240; ++x)
+    for (let i = 0; i < numCities; ++i)
     {
-      for (let y = 0; y < 240; ++y)
+      let city = new City();
+      city.Init(
+        new Phaser.Math.Vector2(Math.random() * width, Math.random() * height),
+        citiesRadius
+      );
+      city.SetInnerRadius(citiesInnerRadius);
+      cities.push(city);  
+    }
+    
+    let citiesListSize: number = cities.length;
+    for (let i = 0; i < 500; ++i)
+    {
+      for (let cityIndex = 0; cityIndex < citiesListSize; ++cityIndex)
       {
-        for (let cityPositionIndex = 0; cityPositionIndex < positions.length; ++cityPositionIndex)
+        let city: City = cities[cityIndex];
+        let force = this.ObjectAvoidance(city, 15, cities);
+        force.setLength(Math.min(force.length(), 15));
+        city.SetPosition(city.Position.add(force));
+        this.KeepAgentInBounds(
+          city,
+          width * 0.1,
+          height * 0.1,
+          width * 0.9,
+          height * 0.9);
+      }
+    }
+
+    return cities;
+  }
+
+  private KeepAgentInBounds(agent: Agent, x: number, y: number, x2: number, y2: number)
+  {
+    agent.SetPosition(
+      new Phaser.Math.Vector2(
+        Math.min(Math.max(x, agent.Position.x), x2 - 1),
+        Math.min(Math.max(y, agent.Position.y), y2 - 1)
+      )
+    );
+  }
+
+  private CitiesTerrains(cities: City[], width: number, height: number) : HeightMap
+  {
+    let values: number[] = new Array(width * height);
+
+    for (let x = 0; x < width; ++x)
+    {
+      for (let y = 0; y < height; ++y)
+      {
+        values[x + y * width] = 0;
+        for (let cityPositionIndex = 0; cityPositionIndex < cities.length; ++cityPositionIndex)
         {
+          let city: City = cities[cityPositionIndex];
           let cityDistance: number = Math.sqrt(
-            Math.pow(positions[cityPositionIndex].x - x, 2) + Math.pow(positions[cityPositionIndex].y - y, 2)
+            Math.pow(city.Position.x - x, 2) + Math.pow(city.Position.y - y, 2)
           );
-          if (cityDistance <= cityRadious)
+          let value = 0.0;
+          if (cityDistance <= city.Radius)
           {
-            if (cityDistance > innerRadious)
+            if (cityDistance > city.InnerRadius)
             {
-              values[x + y * 240] = 1.0 - ((cityDistance - innerRadious) / (cityRadious - innerRadious));  
+              value = 1.0 - ((cityDistance - city.InnerRadius) / (city.Radius - city.InnerRadius));  
             }
             else
             {
-              values[x + y * 240] = 1.0;  
+              value = 1.0;  
             }
           }
-          else
-          {
-            if (values[x + y * 240] == null)
-            {
-              values[x + y * 240] = 0.0;  
-            }
-          }
-        }        
+
+          values[x + y * width] = Math.min(1.0, values[x + y * width] + value);
+        }
       }
     }
 
     let heightMap = new HeightMap();
-    heightMap.Init(240, 240, values);
+    heightMap.Init(width, height, values);
     return heightMap;
+  }
+
+  private ObjectAvoidance(
+    agent: Agent,
+    maxForce: number,
+    objects: Agent[]
+  ): Phaser.Math.Vector2
+  {
+    let force = new Phaser.Math.Vector2(0, 0);
+    let numObjects = objects.length;
+    for (let i = 0; i < numObjects; ++i)
+    {
+      let object = objects[i];
+      if (object.Id == agent.Id)
+      {
+        continue;  
+      }
+
+      let toAgent = new Phaser.Math.Vector2(agent.Position.x - object.Position.x, agent.Position.y - object.Position.y);
+      let distanceToAgent = toAgent.length();
+      if (distanceToAgent < (agent.Radius + object.Radius))
+      {
+        let forceScale = 1 - distanceToAgent / (agent.Radius + object.Radius);
+        force = force.add(toAgent.setLength(maxForce * forceScale));
+      }
+    }
+
+    return force;
+  }
+
+  private PaintCity(graphics: Phaser.GameObjects.Graphics, city: Agent, scale: number)
+  {
+    graphics.fillStyle(this._m_colorRed.color);
+    graphics.fillCircle(city.Position.x * scale, city.Position.y * scale, 2 * scale);
+    graphics.lineStyle(1, this._m_colorBlue.color);
+    graphics.strokeCircle(city.Position.x * scale, city.Position.y * scale, city.Radius * scale);
   }
 }
 
