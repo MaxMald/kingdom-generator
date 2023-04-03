@@ -56,7 +56,7 @@ export class HeightMap
     
     for (let i: number = 0; i < size; ++i)
     {
-      result._m_heightMatrix[i] = lvalue._m_heightMatrix[i] + rValue._m_heightMatrix[i];
+      result._m_heightMatrix[i] = Math.min(1.0, lvalue._m_heightMatrix[i] + rValue._m_heightMatrix[i]);
     }
 
     return result;
@@ -109,6 +109,20 @@ export class HeightMap
     }
     
     return result;
+  }
+
+  public static ApplyMinimumMask(target: HeightMap, minimumMask: HeightMap)
+  {
+    if (target.Columns != minimumMask.Columns || target.Rows != minimumMask.Rows)
+    {
+      throw new Error("HeightMap instances must have the same dimensions to perform this operation.");  
+    }
+
+    let size: number = target.Rows * target.Columns;
+    for (let i: number = 0; i < size; ++i)
+    {
+      target._m_heightMatrix[i] = Math.max(target._m_heightMatrix[i], minimumMask._m_heightMatrix[i]);
+    }
   }
 
   /**

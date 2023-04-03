@@ -50,15 +50,17 @@ export default class Demo extends Phaser.Scene
     this._m_graphics = this.add.graphics();
     this._m_citiesGraphics = this.add.graphics();
     let perlinNoise: PerlinNoise2D = new PerlinNoise2D();
-    perlinNoise.Init(500, 500);
-    
+    perlinNoise.Init(500, 500);    
     this._m_heightMap = new HeightMap();
-    this._m_heightMap.Init(500, 500, perlinNoise.GeneratePerlinNoise(500, 500, 8, 2));
+    this._m_heightMap.Init(width, height, perlinNoise.GeneratePerlinNoise(width, height, 7, 1.1));
     
     
 
-    let cities: City[] = this.GenerateCitiesDistribution(10, 100, 10, 50, 5, width, height);
-    this.UpdateHeightMapVisualization(this.CitiesTerrains(cities, width, height));
+    let cities: City[] = this.GenerateCitiesDistribution(4, 35, 15, 20, 10, width, height);
+    let citiesTerrainElevationMask = this.CitiesTerrains(cities, width, height);
+    this._m_heightMap = HeightMap.Add(this._m_heightMap, citiesTerrainElevationMask);
+    //this.UpdateHeightMapVisualization(this._m_heightMap);
+    this.UpdateTerrainElevationVisualiztion(this._m_heightMap, 0.5);
     for (let i = 0; i < cities.length; ++i)
     {
       this.PaintCity(this._m_citiesGraphics, cities[i], this._m_scaleX);  
@@ -86,6 +88,35 @@ export default class Demo extends Phaser.Scene
         this._m_graphics.fillStyle(
           new Phaser.Display.Color(colorObj.r, colorObj.g, colorObj.b).color
         );
+        this._m_graphics.fillRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
+      }
+    }
+  }
+
+  private UpdateTerrainElevationVisualiztion(heightMap: HeightMap, waterLevel: number)
+  {
+    this._m_graphics.clear();
+
+    let cellHeight: number = this.renderer.height / heightMap.Rows;
+    let cellWidth: number = cellHeight;
+    let black = new Phaser.Display.Color(0, 0, 0);
+    let white = new Phaser.Display.Color(255, 255, 255);
+    let rect = new Phaser.Geom.Rectangle(0, 0, cellWidth, cellHeight);
+    for (let x = 0; x < heightMap.Columns; ++x)
+    {
+      for (let y = 0; y < heightMap.Rows; ++y)
+      {
+        rect.setPosition(x * cellWidth, y * cellHeight);
+        
+        if (heightMap.Get(x, y) < waterLevel)
+        {
+          this._m_graphics.fillStyle(this._m_colorBlue.color);
+        }
+        else
+        {
+          this._m_graphics.fillStyle(this._m_colorGreen.color);  
+        }
+        
         this._m_graphics.fillRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
       }
     }
@@ -231,8 +262,8 @@ export default class Demo extends Phaser.Scene
 const config = {
   type: Phaser.AUTO,
   backgroundColor: '#125555',
-  width: 800,
-  height: 600,
+  width: 900,
+  height: 900,
   scene: Demo
 };
 
