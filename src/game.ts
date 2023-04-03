@@ -57,7 +57,7 @@ export default class Demo extends Phaser.Scene
     
     
 
-    let cities: City[] = this.GenerateCitiesDistribution(2, 100, 10, 50, 5, width, height);
+    let cities: City[] = this.GenerateCitiesDistribution(10, 100, 10, 50, 5, width, height);
     this.UpdateHeightMapVisualization(this.CitiesTerrains(cities, width, height));
     for (let i = 0; i < cities.length; ++i)
     {
