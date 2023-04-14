@@ -1,4 +1,4 @@
-export class HeightMap 
+export class HeightMap
 {
   /**
    * The height matrix values.
@@ -123,6 +123,77 @@ export class HeightMap
     {
       target._m_heightMatrix[i] = Math.max(target._m_heightMatrix[i], minimumMask._m_heightMatrix[i]);
     }
+  }
+
+  public static Mask(target: HeightMap, mask: HeightMap, invert: boolean = false) : HeightMap
+  {
+    if (target.Columns != mask.Columns || target.Rows != mask.Rows)
+    {
+      throw new Error("HeightMap instances must have the same dimensions to perform this operation.");  
+    }
+
+    let result: HeightMap = new HeightMap();    
+    let numRows: number = target.Rows;
+    let numCols: number = target.Columns;
+    let size: number = target.Rows * target.Columns;
+    result.Init(numCols, numRows, new Array(size));
+
+    if (invert)
+    {
+      for (let i: number = 0; i < size; ++i)
+      {
+        result._m_heightMatrix[i] = target._m_heightMatrix[i] * ( 1.0 - mask._m_heightMatrix[i]);
+      }
+    }
+    else
+    {
+      for (let i: number = 0; i < size; ++i)
+      {
+        result._m_heightMatrix[i] = target._m_heightMatrix[i] * mask._m_heightMatrix[i];
+      }
+    }
+    return result;
+  }
+
+  public static Cut(target: HeightMap, mask: HeightMap, threshold: number, greater: boolean) : HeightMap
+  {
+    if (target.Columns != mask.Columns || target.Rows != mask.Rows)
+    {
+      throw new Error("HeightMap instances must have the same dimensions to perform this operation.");  
+    }
+
+    let result: HeightMap = new HeightMap();    
+    let numRows: number = target.Rows;
+    let numCols: number = target.Columns;
+    let size: number = target.Rows * target.Columns;
+    result.Init(numCols, numRows, new Array(size));
+    for (let i: number = 0; i < size; ++i)
+    {
+      if (greater)
+      {
+        if (mask._m_heightMatrix[i] > threshold)
+        {
+          result._m_heightMatrix[i] = target._m_heightMatrix[i];   
+        }
+        else
+        {
+          result._m_heightMatrix[i] = 0.0;
+        }
+      }
+      else
+      {
+        if (mask._m_heightMatrix[i] < threshold)
+        {
+          result._m_heightMatrix[i] = target._m_heightMatrix[i];   
+        }
+        else
+        {
+          result._m_heightMatrix[i] = 0.0;
+        }
+      }      
+    }
+
+    return result;
   }
 
   /**

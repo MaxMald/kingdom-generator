@@ -10,11 +10,15 @@ export default class Demo extends Phaser.Scene
 
   private _m_graphics: Phaser.GameObjects.Graphics;
 
+  private _m_forestGraphics: Phaser.GameObjects.Graphics;
+
   private _m_citiesGraphics: Phaser.GameObjects.Graphics;
 
   private _m_colorRed: Phaser.Display.Color;
 
   private _m_colorGreen: Phaser.Display.Color;
+
+  private _m_colorDarkGreen: Phaser.Display.Color;
 
   private _m_colorBlue: Phaser.Display.Color;
 
@@ -37,8 +41,8 @@ export default class Demo extends Phaser.Scene
 
   create()
   {
-    let width: number = 255;
-    let height: number = 255;
+    let width: number = 180;
+    let height: number = 180;
 
     this._m_scaleY = this.renderer.height / height;
     this._m_scaleX = this._m_scaleY;
@@ -46,21 +50,29 @@ export default class Demo extends Phaser.Scene
     this._m_colorRed = new Phaser.Display.Color(255, 0, 0);
     this._m_colorGreen = new Phaser.Display.Color(0, 255, 0);
     this._m_colorBlue = new Phaser.Display.Color(0, 0, 255);
+    this._m_colorDarkGreen = new Phaser.Display.Color(1, 50, 32);
 
     this._m_graphics = this.add.graphics();
+    this._m_forestGraphics = this.add.graphics();
     this._m_citiesGraphics = this.add.graphics();
+
     let perlinNoise: PerlinNoise2D = new PerlinNoise2D();
     perlinNoise.Init(500, 500);    
     this._m_heightMap = new HeightMap();
     this._m_heightMap.Init(width, height, perlinNoise.GeneratePerlinNoise(width, height, 7, 1.1));
     
-    
+    perlinNoise.Init(500, 500);
+    let forestMap = new HeightMap();
+    forestMap.Init(width, height, perlinNoise.GeneratePerlinNoise(width, height, 7, 1.1));
 
     let cities: City[] = this.GenerateCitiesDistribution(4, 35, 15, 20, 10, width, height);
     let citiesTerrainElevationMask = this.CitiesTerrains(cities, width, height);
     this._m_heightMap = HeightMap.Add(this._m_heightMap, citiesTerrainElevationMask);
-    //this.UpdateHeightMapVisualization(this._m_heightMap);
+    let maskedForestMap = HeightMap.Cut(forestMap, this._m_heightMap, 0.5, true);
+    maskedForestMap = HeightMap.Mask(maskedForestMap, citiesTerrainElevationMask, true);
+    //this.UpdateHeightMapVisualization();
     this.UpdateTerrainElevationVisualiztion(this._m_heightMap, 0.5);
+    this.UpdateForest(this._m_forestGraphics, maskedForestMap, 0.5, this._m_scaleX, this._m_scaleY);
     for (let i = 0; i < cities.length; ++i)
     {
       this.PaintCity(this._m_citiesGraphics, cities[i], this._m_scaleX);  
@@ -96,7 +108,6 @@ export default class Demo extends Phaser.Scene
   private UpdateTerrainElevationVisualiztion(heightMap: HeightMap, waterLevel: number)
   {
     this._m_graphics.clear();
-
     let cellHeight: number = this.renderer.height / heightMap.Rows;
     let cellWidth: number = cellHeight;
     let black = new Phaser.Display.Color(0, 0, 0);
@@ -118,6 +129,31 @@ export default class Demo extends Phaser.Scene
         }
         
         this._m_graphics.fillRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
+      }
+    }
+  }
+
+  private UpdateForest(
+    graphics: Phaser.GameObjects.Graphics,
+    heightMap: HeightMap,
+    threshold: number,
+    cellWidth: number,
+    cellHeight: number
+  )
+  {
+    graphics.clear();
+    let rect = new Phaser.Geom.Rectangle(0, 0, cellWidth, cellHeight);
+    for (let x = 0; x < heightMap.Columns; ++x)
+    {
+      for (let y = 0; y < heightMap.Rows; ++y)
+      {
+        rect.setPosition(x * cellWidth, y * cellHeight);
+        
+        if (heightMap.Get(x, y) > threshold)
+        {
+          this._m_graphics.fillStyle(this._m_colorDarkGreen.color);
+          this._m_graphics.fillRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
+        }
       }
     }
   }
