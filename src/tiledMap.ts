@@ -1,4 +1,7 @@
 import { MapTile } from "./mapTile";
+import { Vector2 } from "./math/vector2";
+import { TerrainType } from "./terrainType";
+import { HeightMap } from "./utilities/heightMap";
 
 export class TiledMap 
 {
@@ -41,6 +44,47 @@ export class TiledMap
     this._m_tiles = new Array();
     this._m_numColumns = 0;
     this._m_numRows = 0;
+  }
+
+  public Init(
+    numColumns: number,
+    numRows: number,
+    waterLevel: number,
+    terrainHeightMap: HeightMap,
+    forestMask: HeightMap,
+  )
+  {
+    this._m_numColumns = numColumns;
+    this._m_numRows = numRows;    
+    this._m_tiles = new Array<MapTile>(numColumns * numRows);
+    for (let col = 0; col < numColumns; ++col)
+    {
+      for (let row = 0; row < numColumns; ++row)
+      {
+        this._m_tiles[col + row * this._m_numColumns] = new MapTile();
+        if (terrainHeightMap.Get(col, row) <= waterLevel)
+        {
+          this._m_tiles[col + row * this._m_numColumns].Init(
+            new Vector2(col, row),
+            TerrainType.kWater
+          );
+        }
+        else if (forestMask.Get(col, row) == 1.0)
+        {
+          this._m_tiles[col + row * this._m_numColumns].Init(
+            new Vector2(col, row),
+            TerrainType.kForest
+          );
+        }
+        else
+        {
+          this._m_tiles[col + row * this._m_numColumns].Init(
+            new Vector2(col, row),
+            TerrainType.kLand
+          );
+        }
+      }  
+    }
   }
 
   /**

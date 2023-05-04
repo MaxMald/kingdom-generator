@@ -1,8 +1,10 @@
 import 'phaser';
-import { PerlinNoise2D } from './perlinNoise2D';
-import { HeightMap } from './heightMap';
+import { PerlinNoise2D } from './utilities/perlinNoise2D';
+import { HeightMap } from './utilities/heightMap';
 import { Agent } from './object';
 import { City } from './city';
+import { TiledMapGenerator } from './tiledMapGenerator';
+import { TiledMapGeneratorConfiguration } from './tiledMapGeneratorConfiguration';
 
 export default class Demo extends Phaser.Scene
 {
@@ -41,6 +43,22 @@ export default class Demo extends Phaser.Scene
 
   create()
   {
+    let tiledMapGeneratorConfig = new TiledMapGeneratorConfiguration(
+      220,
+      220,
+      0.5,
+      0.5,
+      7,
+      1.1,
+      4,
+      35,
+      20
+    );
+
+    let tiledMapGenerator = new TiledMapGenerator();
+    tiledMapGenerator.Generate(tiledMapGeneratorConfig);
+
+    /*
     let width: number = 180;
     let height: number = 180;
 
@@ -79,6 +97,7 @@ export default class Demo extends Phaser.Scene
     }
 
     //this.UpdateHeightMapVisualization();
+    */
 
   }
 

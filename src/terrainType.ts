@@ -3,7 +3,7 @@
  */
 export enum TerrainType 
 {
-  kForrest,
+  kForest,
   kLand,
   kWater
 }
