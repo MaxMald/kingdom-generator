@@ -39,6 +39,9 @@ export default class Demo extends Phaser.Scene
     this.load.image('libs', 'assets/libs.png');
     this.load.glsl('bundle', 'assets/plasma-bundle.glsl.js');
     this.load.glsl('stars', 'assets/starfields.glsl.js');
+
+    this.load.image("ground", "assets/Ground/Ground_A_PNG/Ground_A_01.png");
+    this.load.image("water", "assets/RiverBank/RiverBank_ALL_PNG/Water_A.png");
   }
 
   create()
@@ -58,7 +61,7 @@ export default class Demo extends Phaser.Scene
     let tiledMapGenerator = new TiledMapGenerator();
     tiledMapGenerator.Generate(tiledMapGeneratorConfig);
 
-    /*
+    
     let width: number = 180;
     let height: number = 180;
 
@@ -89,16 +92,31 @@ export default class Demo extends Phaser.Scene
     let maskedForestMap = HeightMap.Cut(forestMap, this._m_heightMap, 0.5, true);
     maskedForestMap = HeightMap.Mask(maskedForestMap, citiesTerrainElevationMask, true);
     //this.UpdateHeightMapVisualization();
-    this.UpdateTerrainElevationVisualiztion(this._m_heightMap, 0.5);
-    this.UpdateForest(this._m_forestGraphics, maskedForestMap, 0.5, this._m_scaleX, this._m_scaleY);
+    //this.UpdateTerrainElevationVisualiztion(this._m_heightMap, 0.5);
+    //this.UpdateForest(this._m_forestGraphics, maskedForestMap, 0.5, this._m_scaleX, this._m_scaleY);
     for (let i = 0; i < cities.length; ++i)
     {
-      this.PaintCity(this._m_citiesGraphics, cities[i], this._m_scaleX);  
+      //this.PaintCity(this._m_citiesGraphics, cities[i], this._m_scaleX);  
     }
 
     //this.UpdateHeightMapVisualization();
-    */
+    
+    this.BuildTerrain(
+      this._m_heightMap,
+      254,
+      128,
+      "ground",
+      "water"
+    );
 
+    let cam = this.cameras.main;
+    cam.setZoom(0.5);
+    this.input.on("pointermove", function (p) {
+      if (!p.isDown) return;
+  
+      cam.scrollX -= (p.x - p.prevPosition.x) / cam.zoom;
+      cam.scrollY -= (p.y - p.prevPosition.y) / cam.zoom;
+    });
   }
 
   private UpdateHeightMapVisualization(heightMap: HeightMap)
@@ -311,6 +329,36 @@ export default class Demo extends Phaser.Scene
     graphics.fillCircle(city.Position.x * scale, city.Position.y * scale, 2 * scale);
     graphics.lineStyle(1, this._m_colorBlue.color);
     graphics.strokeCircle(city.Position.x * scale, city.Position.y * scale, city.Radius * scale);
+  }
+
+  private BuildTerrain(
+    heightMap: HeightMap,
+    tileWidth: number,
+    tileHeight: number,
+    groundName: string,
+    waterName: string
+  )
+  {
+    const halfTileWidth = tileWidth * 0.5;
+    const halfTileHeight = tileHeight * 0.5;
+
+    for (let rowIndex = 0; rowIndex < heightMap.Rows; ++rowIndex)
+    {
+      for (let columnIndex = 0; columnIndex < heightMap.Columns; ++columnIndex)
+      {
+        const tx = (columnIndex - rowIndex) * halfTileWidth;
+        const ty = (columnIndex + rowIndex) * halfTileHeight;
+        
+        
+        const tile = this.add.image(
+          tx,
+          ty,
+          (heightMap.Get(columnIndex, rowIndex) > 0.5 ? groundName: waterName)
+        );
+
+        tile.depth = ty;
+      }
+    }
   }
 }
 

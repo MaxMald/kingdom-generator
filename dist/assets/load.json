@@ -1,0 +1,12 @@
+{
+  "assets": [
+    {
+      "key" : "GroundA",
+      "path" : "assets/Ground/Ground_A_PNG/",
+      "files" : [
+        "Ground_A_01"
+      ]
+    }
+
+  ]
+}
