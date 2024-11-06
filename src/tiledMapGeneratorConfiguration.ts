@@ -4,6 +4,10 @@ export class TiledMapGeneratorConfiguration
 
   public numRows: number;
 
+  public textureWidth: number;
+
+  public textureHeight: number;
+
   public waterLevel: number;
 
   public forestLevel: number;
@@ -21,6 +25,8 @@ export class TiledMapGeneratorConfiguration
   public constructor(
     numColumns: number,
     numRows: number,
+    textureWidth: number,
+    textureHeight: number,
     waterLevel: number,
     forestLevel: number,
     terrainNumOctaves: number,
@@ -32,6 +38,8 @@ export class TiledMapGeneratorConfiguration
   {
     this.numColumns = numColumns;
     this.numRows = numRows;
+    this.textureWidth = textureWidth;
+    this.textureHeight = textureHeight;
     this.waterLevel = waterLevel;
     this.forestLevel = forestLevel;
     this.terrainNumOctaves = terrainNumOctaves;

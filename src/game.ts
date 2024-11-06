@@ -28,6 +28,8 @@ export default class Demo extends Phaser.Scene
   
   private _m_scaleY: number;
 
+  private _m_camera: Phaser.Cameras.Scene2D.Camera;
+
   constructor()
   {
     super('demo');
@@ -40,28 +42,33 @@ export default class Demo extends Phaser.Scene
     this.load.glsl('bundle', 'assets/plasma-bundle.glsl.js');
     this.load.glsl('stars', 'assets/starfields.glsl.js');
 
-    this.load.image("ground", "assets/Ground/Ground_A_PNG/Ground_A_01.png");
+    this.load.image("land", "assets/Ground/Ground_A_PNG/Ground_A_01.png");
     this.load.image("water", "assets/RiverBank/RiverBank_ALL_PNG/Water_A.png");
   }
 
   create()
   {
     let tiledMapGeneratorConfig = new TiledMapGeneratorConfiguration(
-      220,
-      220,
-      0.5,
-      0.5,
-      7,
-      1.1,
-      4,
-      35,
-      20
+      125,  // Columns
+      125,  // Rows
+      254,  // texture width
+      128,  // texture height
+      0.5,  // water level
+      0.5,  // forest level
+      7,    // Octaves
+      1.1,  // Bias
+      4,    // Number of Cities
+      35,   // Central City Radius
+      20    // City Radius
     );
 
     let tiledMapGenerator = new TiledMapGenerator();
-    tiledMapGenerator.Generate(tiledMapGeneratorConfig);
-
+    tiledMapGenerator.Generate(
+      tiledMapGeneratorConfig,
+      this
+    );
     
+    /*
     let width: number = 180;
     let height: number = 180;
 
@@ -107,15 +114,32 @@ export default class Demo extends Phaser.Scene
       128,
       "ground",
       "water"
-    );
+    );*/
 
-    let cam = this.cameras.main;
-    cam.setZoom(0.5);
-    this.input.on("pointermove", function (p) {
+    // Camera navigation
+    let camera = this.cameras.main;
+    this.input.on("pointermove", function (p) 
+    {
       if (!p.isDown) return;
   
-      cam.scrollX -= (p.x - p.prevPosition.x) / cam.zoom;
-      cam.scrollY -= (p.y - p.prevPosition.y) / cam.zoom;
+      camera.scrollX -= (p.x - p.prevPosition.x) / camera.zoom;
+      camera.scrollY -= (p.y - p.prevPosition.y) / camera.zoom;
+    });
+
+    this.input.on("wheel", function (p)
+    {
+      let step = 0.2;
+      let max = 3;
+      let min = 0.1;
+
+      if (p.deltaY < 0)
+      {
+        camera.setZoom(Math.min(max, camera.zoom + step));
+      }
+      else
+      {
+        camera.setZoom(Math.max(min, camera.zoom - step));
+      }
     });
   }
 

@@ -21,6 +21,16 @@ export class TiledMap
   private _m_numRows: number;
 
   /**
+   * The width of the tile texture.
+   */
+  private _m_textureWidth: number;
+
+  /**
+   * The height of the tile texture.
+   */
+  private _m_textureHeight: number;
+
+  /**
    * Get the number of columns of this TiledMap.
    */
   public get NumColumns()
@@ -37,6 +47,22 @@ export class TiledMap
   }
 
   /**
+   * The width of the texture of the tiles.
+   */
+  public get TextureWidth()
+  {
+    return this._m_textureWidth;
+  }
+
+  /**
+   * The height of the texture of the tiles.
+   */
+  public get TextureHeight()
+  {
+    return this._m_textureHeight;
+  }
+
+  /**
    * Constructor.
    */
   public constructor()
@@ -47,16 +73,24 @@ export class TiledMap
   }
 
   public Init(
+    scene: Phaser.Scene,
     numColumns: number,
     numRows: number,
     waterLevel: number,
+    textureWidth: number,
+    textureHeight: number,
     terrainHeightMap: HeightMap,
     forestMask: HeightMap,
   )
   {
     this._m_numColumns = numColumns;
-    this._m_numRows = numRows;    
+    this._m_numRows = numRows;
+    this._m_textureWidth = textureWidth;
+    this._m_textureHeight = textureHeight;
     this._m_tiles = new Array<MapTile>(numColumns * numRows);
+    
+    let halfTextureWidth = textureWidth * 0.5;
+    let halfTextureHeight = textureHeight * 0.5;
     for (let col = 0; col < numColumns; ++col)
     {
       for (let row = 0; row < numColumns; ++row)
@@ -64,23 +98,35 @@ export class TiledMap
         this._m_tiles[col + row * this._m_numColumns] = new MapTile();
         if (terrainHeightMap.Get(col, row) <= waterLevel)
         {
-          this._m_tiles[col + row * this._m_numColumns].Init(
-            new Vector2(col, row),
-            TerrainType.kWater
+          this.CreateMapTile(
+            scene,
+            col,
+            row,
+            TerrainType.kWater,
+            halfTextureWidth,
+            halfTextureHeight
           );
         }
         else if (forestMask.Get(col, row) == 1.0)
         {
-          this._m_tiles[col + row * this._m_numColumns].Init(
-            new Vector2(col, row),
-            TerrainType.kForest
+          this.CreateMapTile(
+            scene,
+            col,
+            row,
+            TerrainType.kForest,
+            halfTextureWidth,
+            halfTextureHeight
           );
         }
         else
         {
-          this._m_tiles[col + row * this._m_numColumns].Init(
-            new Vector2(col, row),
-            TerrainType.kLand
+          this.CreateMapTile(
+            scene,
+            col,
+            row,
+            TerrainType.kLand,
+            halfTextureWidth,
+            halfTextureHeight
           );
         }
       }  
@@ -108,5 +154,34 @@ export class TiledMap
     }
 
     return this._m_tiles[column + (this._m_numColumns * row)];
+  }
+
+  private CreateMapTile(
+    scene: Phaser.Scene,
+    column: number,
+    row: number,
+    type: TerrainType,
+    halfTextureWidth: number,
+    halfTextureHeight: number
+  ): MapTile
+  {
+    const tx = (column - row) * halfTextureWidth;
+    const ty = (column + row) * halfTextureHeight;
+    
+    const tileSprite = scene.add.image(
+      tx,
+      ty,
+      (type == TerrainType.kWater ? "water": "land") // TODO
+    );
+    tileSprite.depth = ty;
+
+    const mapTile = new MapTile();
+    mapTile.Init(
+      new Vector2(column, row),
+      type,
+      tileSprite
+    );
+
+    return mapTile;
   }
 }

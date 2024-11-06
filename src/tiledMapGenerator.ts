@@ -9,7 +9,10 @@ import { SteeringForce } from "./utilities/steeringForce";
 
 export class TiledMapGenerator
 {
-  public Generate(config: TiledMapGeneratorConfiguration): TiledMap
+  public Generate(
+    config: TiledMapGeneratorConfiguration,
+    scene: Phaser.Scene
+  ): TiledMap
   {
     let perlinNoise: PerlinNoise2D = new PerlinNoise2D();
     let terrainHeightMap: HeightMap = this.GenerateTerrainHeightMap(
@@ -49,37 +52,20 @@ export class TiledMapGenerator
     forestMask.Cut(terrainHeightMap, config.waterLevel);
     forestMask.Cut(citiesTerrainHeightMap, 0.1);
 
+    
+
     let tiledMap: TiledMap = new TiledMap();
     tiledMap.Init(
+      scene,
       config.numColumns,
       config.numRows,
       config.waterLevel,
+      config.textureWidth,
+      config.textureHeight,
       terrainHeightMap,
       forestMask
     );
-
-    let str: String = "";
-    for (let row = 0; row < config.numRows; ++row)
-    {
-      for (let col = 0; col < config.numColumns; ++col)
-      {
-        switch (tiledMap.GetMapTile(col, row).TerrainType)
-        {
-          case TerrainType.kForest:
-            str += '▩'
-            break;
-          case TerrainType.kLand:
-            str += '▦'
-            break;
-          case TerrainType.kWater:
-            str += '▥'
-            break;
-        }
-      }
-      str += '\n';
-    }
-
-    console.log(str);
+    
     return tiledMap;
   }
 
@@ -180,6 +166,40 @@ export class TiledMapGenerator
       }
     }
     return cities;
+  }
+
+  private GenerateTerrainTypeGrid
+    (
+      terrainElevationMap: HeightMap,
+      waterLevel: number,
+      forrestMap: HeightMap
+    ): TerrainType[][]
+  {
+    let numColumns = terrainElevationMap.Columns;
+    let numRows = terrainElevationMap.Rows;
+
+    let terrainTypeGrid: TerrainType[][] = [];
+    for (let rowIndex: number = 0; rowIndex < numRows; ++rowIndex)
+    {
+      terrainTypeGrid[rowIndex] = [];
+      for (let columnIndex: number = 0; columnIndex < numColumns; ++columnIndex)
+      {
+        if (forrestMap.Get(columnIndex, rowIndex) == 1.0)
+        {
+          terrainTypeGrid[rowIndex][columnIndex] = TerrainType.kForest;
+        }
+        else if (terrainElevationMap.Get(columnIndex, rowIndex) > waterLevel)
+        {
+          terrainTypeGrid[rowIndex][columnIndex] = TerrainType.kLand;
+        }
+        else
+        {
+          terrainTypeGrid[rowIndex][columnIndex] = TerrainType.kWater;
+        }
+      }  
+    }
+
+    return terrainTypeGrid;
   }
 
   private GenerateCitiesTerrainHeightMap(cities: City[], numColumns: number, numRows: number) : HeightMap
